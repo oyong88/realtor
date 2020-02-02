@@ -1,0 +1,74 @@
+﻿body {
+  padding-top: 65px;
+  padding-bottom: 30px;
+}
+
+.theme-dropdown .dropdown-menu {
+  position: static;
+  display: block;
+  margin-bottom: 20px;
+}
+
+.theme-showcase > p > .btn {
+  margin: 5px 0;
+}
+
+.theme-showcase .navbar .container {
+  width: auto;
+}
+
+.modal-backdrop.am-fade {
+  opacity: .5;
+  transition: opacity .15s linear;
+}
+
+@media screen and (min-width: 768px) {
+    .large {
+        width: 50%; /* either % (e.g. 60%) or px (400px) */
+    }
+}
+
+a,
+[ng-click],
+[data-ng-click],
+[x-ng-click],
+[st-sort] {
+	cursor: pointer;
+}
+
+[ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
+	display: none !important;
+}
+
+.form-signin {
+  max-width: 330px;
+  padding: 15px;
+  margin: 0 auto;
+}
+
+.form-signin .form-signin-heading,
+.form-signin .checkbox {
+  margin-bottom: 10px;
+}
+
+.form-signin .checkbox {
+  font-weight: normal;
+}
+
+.form-signin .form-control {
+  position: relative;
+  height: auto;
+  -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+          box-sizing: border-box;
+  padding: 10px;
+  font-size: 16px;
+}
+
+.form-signin .form-control:focus {
+  z-index: 2;
+}
+
+.form-signin input[type="password"] {
+  margin-bottom: 10px;
+}

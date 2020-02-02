@@ -1,0 +1,310 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section scripts {
+
+    <script type="text/javascript">
+
+        (function () {
+            'use strict';
+
+            var app = angular.module('realtor');
+
+            //init data from server..
+            app.value("initData", {
+                phoneType: @Html.Raw(ViewData["PhoneType"]),
+            });
+
+            //define controller
+            app.controller('Controller', function ($scope, $window, $timeout, dataService, initData, $modal, $alert, usSpinnerService, Upload) {
+
+                var request = {
+                    phoneType: 1
+                };
+
+                var modal = $modal({
+                    scope: $scope,
+                    templateUrl: 'modal.html',
+                    show: false
+                });
+
+                angular.extend($scope, {
+                    total: 0,
+                    initData: initData,
+                    searchCondition: {
+                        phoneType: '',
+                        type: 1,
+                        word: '',
+                        page: 1,
+                        pageSize: 15,
+                        no: '@ViewData["No"]'
+                    },
+                    request: {
+                        phoneType: 1
+                    },
+                    getPhoneTypeName: function(phoneType) {
+                        return initData.phoneType[phoneType];
+                    },
+                    openModal: function (no) {
+
+                        if(no) {
+                            $scope.modalTitle = "수정";
+
+                            //update
+                            dataService.get("/PhoneBooks/Load/" + no).success(function (data) {
+                                $scope.request = data;
+
+                                modal.$promise.then(modal.show);
+                            });
+
+                        } else {
+
+                            //new/
+                            $scope.request = angular.copy(request);
+                            $scope.modalTitle = "신규";
+
+                            $scope.request.registDate = moment();
+
+                            modal.$promise.then(modal.show);
+                        }
+                    },
+                    search: function (page, init) {
+
+                        usSpinnerService.spin('loading');
+
+                        var param;
+
+                        if(page) {
+                            $scope.searchCondition.page = page;
+                        }
+
+                        if(init) {
+                            $scope.searchCondition.no = null;
+                        }
+
+                        dataService.get("/PhoneBooks/List", $scope.searchCondition).success(function (data) {
+
+                            usSpinnerService.stop('loading');
+
+                            $scope.phoneBookList = data.list;
+                            $scope.total = data.total;
+                        });
+
+                    },
+                    submit: function() {
+                        dataService.post("/PhoneBooks/Save", $scope.request).success(function (data) {
+
+                            $alert({
+                                title: '성공!',
+                                content: '저장되었습니다.',
+                                placement: 'top',
+                                type: 'success',
+                                duration: 2,
+                                container: "#success",
+                                show: true});
+
+                            modal.$promise.then(modal.hide);
+
+                            $scope.search();
+
+                        });
+                    },
+                    selectPage: function(page, pageSize) {
+                        $scope.search(page);
+                    },
+                    exportData: function() {
+                        $window.location = '/PhoneBooks/Export';
+                    },
+                    uploadFiles: function (files, no) {
+
+                        if (!files) return;;
+
+                        Upload.upload({
+                            url: '/PhoneBooks/Upload/' + no,
+                            file: files
+                        }).success(function (data, status, headers, config) {
+                            if (data.result) {
+                                $scope.request.files = data.files;
+                                $scope.uploaded = true;
+                                $timeout(function () {
+                                    $scope.uploaded = false;
+                                }, 1000);
+                            }
+                        }).error(function (data, status, headers, config) {
+                            console.log('error status: ' + status);
+                        })
+                    },
+                    deleteFile: function(fileName, no) {
+
+                        dataService.post("/PhoneBooks/Delete/" + no, { fileName: fileName }).success(function (data) {
+
+                            if (data.result) {
+                                $scope.request.files = data.files;
+                                $scope.uploaded = true;
+                                $timeout(function () {
+                                    $scope.uploaded = false;
+                                }, 1000);
+                            }
+
+                        });
+                    }
+                });
+
+                $scope.search();
+            });
+
+        }());
+
+    </script>
+
+}
+
+<div class="row">
+    <div class="col-md-12" id="success"></div>
+</div>
+
+<div class="row">
+
+    <form name="searchForm" ng-submit="search(1, true)" novalidate ng-cloak>
+        <div class="col-md-12 form-group form-inline">
+            <label class="radio-inline"><input type="radio" name="searchType" value="1" ng-model="searchCondition.type" />전화</label>
+            <label class="radio-inline"><input type="radio" name="searchType" value="2" ng-model="searchCondition.type" />명칭</label>
+            <input type="text" class="form-control" ng-model="searchCondition.keyword" />
+            <select class="form-control" ng-model="searchCondition.phoneType">
+                <option value="">전체</option>
+                <option ng-repeat="(key, name) in initData.phoneType" value="{{key}}">{{name}}</option>
+            </select>
+            <button type="submit" class="btn btn-primary"><i class="glyphicon glyphicon-search"></i></button>
+            <div class="pull-right">
+                <button type="button" class="btn btn-default" ng-click="exportData()">
+                    <i class="glyphicon glyphicon-print"></i>
+                </button>
+                <button type="button" class="btn btn-default" ng-click="openModal()">
+                    <i class="glyphicon glyphicon-edit"></i>
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <span us-spinner="{radius:30, width:8, length: 16}" spinner-key="loading"></span>
+        <div class="table-responsive">
+            <table class="table table-striped" ng-cloak>
+                <thead>
+                    <tr>
+                        <th style="width:6%">구분</th>
+                        <th style="width:10%">명칭</th>
+                        <th style="width:15%">전화번호</th>
+                        <th style="width:25%">주소</th>
+                        <th style="width:34%">내용</th>
+                        <th style="width:10%">날짜</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="phoneBook in phoneBookList">
+                        <td>{{getPhoneTypeName(phoneBook.phoneType)}}</td>
+                        <td><a ng-click="openModal(phoneBook.no)">{{phoneBook.name}}</a></td>
+                        <td>{{phoneBook.tel}}</td>
+                        <td>{{phoneBook.address}}</td>
+                        <td>{{phoneBook.content | limitTo: 50}} {{phoneBook.content == null || phoneBook.content.length < 50 ? '' : '...'}}</td>
+                        <td>{{phoneBook.registDate | date: 'yyyy-MM-dd'}}</td>
+                    </tr>
+                    <tr ng-show="phoneBookList.length == 0">
+                        <td colspan="6" class="text-center">검색 결과가 존재하지 않습니다.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 text-center">
+        <div paging page="searchCondition.page" page-size="searchCondition.pageSize" total="total"
+             show-prev-next="true" scroll-top="true" hide-if-empty="true"
+             paging-action="selectPage(page, pageSize, total)"></div>
+    </div>
+</div>
+
+<script type="text/ng-template" id="modal.html">
+
+    <!-- Modal -->
+    <div class="modal">
+        <div class="modal-dialog large">
+            <div class="modal-content">
+                <form name="modalForm" class="form-horizontal" ng-submit="submit()" novalidate>
+                    <div class="modal-header">
+                        <button type="button" class="close" ng-click="$hide()"><span>&times;</span></button>
+                        <h4 class="modal-title">전화번호부 : {{modalTitle}}</h4>
+                    </div>
+                    <div class="modal-body">
+
+                        <div class="form-group">
+                            <label class="control-label col-md-2">구분</label>
+                            <div class="col-md-3 form-inline">
+                                <select name="phoneType" class="form-control"
+                                        ng-options="key*1 as name for (key, name) in initData.phoneType"
+                                        ng-model="request.phoneType" ng-required="true"></select>
+                            </div>
+                            <label class="control-label col-md-2">날짜</label>
+                            <div class="col-md-3">
+                                <ng-calender ng-model="request.registDate" format="'YYYY-MM-DD'"></ng-calender>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div ng-class="{'has-error': modalForm.name.$invalid}">
+                                <label class="control-label col-md-2">명칭</label>
+                                <div class="col-md-3 form-inline">
+                                    <input type="text" name="name" class="form-control" ng-model="request.name" maxlength="15" ng-required="true" />
+                                </div>
+                            </div>
+                            <div ng-class="{'has-error': modalForm.tel.$invalid}">
+                                <label class="control-label col-md-2">전화번호</label>
+                                <div class="col-md-3 form-inline">
+                                    <input name="tel" type="text" class="form-control" ng-model="request.tel" maxlength="15" ng-required="true" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-md-2">주소</label>
+                            <div class="col-md-9">
+                                <input name="address" type="text" class="form-control" ng-model="request.address" maxlength="30"/>
+                            </div>
+                        </div>
+                        <div class="form-group" ng-if="request.no">
+                            <label class="control-label col-md-2">계약서</label>
+                            <div class="col-md-2">
+                                <span class="btn btn-default" ng-model="files" ngf-select="uploadFiles($files, request.no)" multiple="multiple">파일첨부</span>
+                                <span ng-show="uploaded" class="text-success"><i class="glyphicon glyphicon-ok"></i></span>
+                            </div>
+                            <div class="col-md-7">
+                                <div class="form-control-static">
+                                    <div ng-repeat="file in request.files.split(',')" ng-if="request.files">
+                                        <a class="text-danger" ng-click="deleteFile(file, request.no)"><i class="glyphicon glyphicon-remove"></i></a>
+                                        <a href="/PhoneBooks/Download/{{request.no}}?fileName={{file}}">{{file}}</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-md-2">내용</label>
+                            <div class="col-md-9">
+                                <textarea class="form-control" rows="5" ng-model="request.content"></textarea>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" ng-click="$hide()">닫기</button>
+                        <button type="submit" class="btn btn-success" ng-disabled="modalForm.$invalid || modalForm.$submitted">저장</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</script>
+

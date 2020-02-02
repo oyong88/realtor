@@ -1,0 +1,61 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section scripts {
+
+    <script type="text/javascript">
+
+    (function () {
+        'use strict';
+
+        var app = angular.module('realtor');
+
+        //define controller
+        app.controller('Controller', function ($scope, $window, dataService, $modal, $alert, usSpinnerService) {
+
+            angular.extend($scope, {
+                login: function () {
+                    dataService.post("/Home/Login", { password: $scope.password }).success(function (data) {
+                        if (data.result == 0) {
+                            $window.location = "/Sales/";
+                        } else {
+                            $alert({
+                                title: '실패!',
+                                content: '비밀번호가 정확하지 않습니다.',
+                                placement: 'top',
+                                type: 'danger',
+                                duration: 2,
+                                container: "#error",
+                                show: true
+                            });
+                        }
+                    });
+                }
+            });
+
+        });
+
+    }());
+
+    </script>
+}
+
+
+
+<form class="form-signin" name="loginForm" ng-submit="login()">
+    
+    <div class="row">
+        <div class="col-md-12" id="error"></div>
+    </div>
+
+    <!--
+    <h2 class="form-signin-heading">Please sign in</h2>
+    -->
+    <label for="inputPassword" class="sr-only">암호</label>
+    <input name="password" type="password" id="inputPassword" class="form-control" placeholder="암호" ng-required="true" ng-model="password">
+
+    <button class="btn btn-lg btn-primary btn-block" type="submit" ng-disabled="loginForm.$invalid">로그인</button>
+
+</form>
+

@@ -1,0 +1,391 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section scripts {
+
+    <script type="text/javascript">
+
+        (function () {
+            'use strict';
+
+            var app = angular.module('realtor');
+
+            //init data from server..
+            app.value("initData", {
+            });
+
+            //define controller
+            app.controller('Controller', function ($scope, $window, $timeout, dataService, initData, $modal, $alert, usSpinnerService, Upload) {
+
+                var request = {
+                }
+
+                var modal = $modal({
+                    scope: $scope,
+                    templateUrl: 'modal.html',
+                    placement: 'center',
+                    show: false
+                });
+
+                angular.extend($scope, {
+                    total: 0,
+                    initData: initData,
+                    searchWord : initData.searchWord,
+                    searchCondition: {
+                        type: 1,
+                        keyword: '',
+                        page: 1,
+                        pageSize: 15,
+                        no: '@ViewData["No"]'
+                    },
+                    request: {
+
+                    },
+                    openModal: function (no) {
+
+                        if(no) {
+                            $scope.modalTitle = "수정";
+
+                            //update
+                            dataService.get("/Contracts/Load/" + no).success(function (data) {
+                                $scope.request = data;
+
+                                modal.$promise.then(modal.show);
+                            });
+
+                        } else {
+
+                            //new/
+                            $scope.request = angular.copy(request);
+                            $scope.modalTitle = "신규";
+                            $scope.request.registDate = moment();
+
+                            modal.$promise.then(modal.show);
+                        }
+                    },
+                    copyModal: function (no) {
+
+                        $scope.modalTitle = "복사";
+                        //update
+                        dataService.get("/Contracts/Load/" + no).success(function (data) {
+                            $scope.request = data;
+                            $scope.request.no = null;
+
+                            modal.$promise.then(modal.show);
+                        });
+
+                    },
+                    search: function (page, init) {
+
+                        usSpinnerService.spin('loading');
+
+                        var param;
+
+                        if(page) {
+                            $scope.searchCondition.page = page;
+                        }
+
+                        if (init) {
+                            $scope.searchCondition.no = null;
+                        }
+
+                        dataService.get("/Contracts/List", $scope.searchCondition).success(function (data) {
+
+                            usSpinnerService.stop('loading');
+
+                            $scope.contractsList = data.list;
+                            $scope.total = data.total;
+                        });
+
+                    },
+                    submit: function() {
+                        dataService.post("/Contracts/Save", $scope.request).success(function (data) {
+
+                            $alert({
+                                title: '성공!',
+                                content: '저장되었습니다.',
+                                placement: 'top',
+                                type: 'success',
+                                duration: 2,
+                                container: "#success",
+                                show: true});
+
+                            modal.$promise.then(modal.hide);
+
+                            $scope.search();
+
+                        });
+                    },
+                    selectPage: function(page, pageSize) {
+                        $scope.search(page);
+                    },
+                    exportData: function() {
+                        $window.location = '/Contracts/Export';
+                    },
+                    uploadFiles: function (files, no) {
+
+                        if (!files) return;;
+
+                        Upload.upload({
+                            url: '/Contracts/Upload/' + no,
+                            file: files
+                        }).success(function (data, status, headers, config) {
+                            if (data.result) {
+                                $scope.request.files = data.files;
+                                $scope.uploaded = true;
+                                $timeout(function () {
+                                    $scope.uploaded = false;
+                                }, 1000);
+                            }
+                        }).error(function (data, status, headers, config) {
+                            console.log('error status: ' + status);
+                        })
+                    },
+                    deleteFile: function (fileName, no) {
+
+                        dataService.post("/Contracts/Delete/" + no, { fileName: fileName }).success(function (data) {
+
+                            if (data.result) {
+                                $scope.request.files = data.files;
+                                $scope.uploaded = true;
+                                $timeout(function () {
+                                    $scope.uploaded = false;
+                                }, 1000);
+                            }
+
+                        });
+                    },
+                });
+
+                $scope.search();
+
+            });
+
+        }());
+
+    </script>
+
+}
+
+<div class="row">
+    <div class="col-md-12" id="success"></div>
+</div>
+
+<div class="row">
+
+    <form name="searchForm" ng-submit="search(1, true)" novalidate ng-cloak>
+        <div class="col-md-12 form-group form-inline">
+            <label class="radio-inline"><input type="radio" name="searchType" value="1" ng-model="searchCondition.type" />주소</label>
+            <label class="radio-inline"><input type="radio" name="searchType" value="2" ng-model="searchCondition.type" />전화</label>
+            <label class="radio-inline"><input type="radio" name="searchType" value="3" ng-model="searchCondition.type" />명칭</label>
+            <input type="text" class="form-control" ng-model="searchCondition.keyword" />
+            <button type="submit" class="btn btn-primary"><i class="glyphicon glyphicon-search"></i></button>
+            <div class="pull-right">
+                <button type="button" class="btn btn-default" ng-click="exportData()">
+                    <i class="glyphicon glyphicon-print"></i>
+                </button>
+                <button type="button" class="btn btn-default" ng-click="openModal()">
+                    <i class="glyphicon glyphicon-edit"></i>
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <span us-spinner="{radius:30, width:8, length: 16}" spinner-key="loading"></span>
+        <div class="table-responsive">
+            <table class="table table-striped" ng-cloak>
+                <thead>
+                    <tr>
+                        <th style="width:8%">계약일</th>
+                        <th style="width:11%">명칭</th>
+                        <th style="width:9%">금액</th>
+                        <th style="width:13%">소재지</th>
+                        <th style="width:8%">임대인</th>
+                        <th style="width:12%">임대인 전화</th>
+                        <th style="width:8%">임차인</th>
+                        <th style="width:12%">임차인 전화</th>
+                        <th style="width:8%">잔금일</th>
+                        <th style="width:9%">공동중개</th>
+                        <th style="width:2%"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="contract in contractsList">
+                        <td>{{contract.registDate | date: 'yyyy-MM-dd'}}</td>
+                        <td><a ng-click="openModal(contract.no)">{{contract.name}}</a></td>
+                        <td>{{contract.payment}}</td>
+                        <td>{{contract.address | limitTo: 15}}</td>
+                        <td>{{contract.ownerName}}</td>
+                        <td>{{contract.ownerTel}}</td>
+                        <td>{{contract.renterName}}</td>
+                        <td>{{contract.renterTel}}</td>
+                        <td>{{contract.balanceDate | date: 'yyyy-MM-dd'}}</td>
+                        <td>{{contract.partner}}</td>
+                        <td>
+                            <a ng-click="copyModal(contract.no)">
+                                <i class="glyphicon glyphicon-share"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr ng-show="contractsList.length == 0">
+                        <td colspan="11" class="text-center">검색 결과가 존재하지 않습니다.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 text-center">
+        <div paging page="searchCondition.page" page-size="searchCondition.pageSize" total="total"
+             show-prev-next="true" scroll-top="true" hide-if-empty="true"
+             paging-action="selectPage(page, pageSize, total)"></div>
+    </div>
+</div>
+
+<script type="text/ng-template" id="modal.html">
+
+    <!-- Modal -->
+    <div class="modal">
+        <div class="modal-dialog large">
+            <div class="modal-content">
+                <form name="modalForm" class="form-horizontal" ng-submit="submit()" novalidate>
+                    <div class="modal-header">
+                        <button type="button" class="close" ng-click="$hide()"><span>&times;</span></button>
+                        <h4 class="modal-title">계약 정보 : {{modalTitle}}</h4>
+                    </div>
+                    <div class="modal-body">
+
+                        <div class="form-group">
+                            <div ng-class="{'has-error': modalForm.name.$invalid}">
+                                <label class="control-label col-md-2">명칭</label>
+                                <div class="col-md-3">
+                                    <input type="text" name="name" class="form-control" ng-model="request.name" maxlength="15" ng-required="true" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group" ng-class="{'has-error': modalForm.address.$invalid}">
+                            <label class="control-label col-md-2">소재지</label>
+                            <div class="col-md-9">
+                                <input name="address" type="text" class="form-control" ng-model="request.address" maxlength="120" ng-required="true" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div ng-class="{'has-error': modalForm.payment.$invalid}">
+                                <label class="control-label col-md-2">계약내용금액</label>
+                                <div class="col-md-3 form-inline">
+                                    <input type="text" name="payment" class="form-control" ng-model="request.payment" maxlength="15" ng-required="true" />
+                                </div>
+                            </div>
+                            <label class="control-label col-md-2">공동중개</label>
+                            <div class="col-md-3 form-inline">
+                                <input type="text" name="partner" class="form-control" ng-model="request.partner" maxlength="15" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-md-2">계약금</label>
+                            <div class="col-md-3 form-inline">
+                                <input type="text" name="amount" class="form-control" ng-model="request.amount" maxlength="15" />
+                            </div>
+                            <label class="control-label col-md-2">계약일</label>
+                            <div class="col-md-3">
+                                <ng-calender ng-model="request.registDate" format="'YYYY-MM-DD'" empty="true"></ng-calender>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-md-2">중도금</label>
+                            <div class="col-md-3 form-inline">
+                                <input type="text" name="secondPayment" class="form-control" ng-model="request.secondPayment" maxlength="15" />
+                            </div>
+                            <label class="control-label col-md-2">중도일</label>
+                            <div class="col-md-3">
+                                <ng-calender ng-model="request.secondPaymentDate" format="'YYYY-MM-DD'" empty="true"></ng-calender>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-md-2">잔금</label>
+                            <div class="col-md-3 form-inline">
+                                <input type="text" name="balance" class="form-control" ng-model="request.balance" maxlength="15" />
+                            </div>
+                            <label class="control-label col-md-2">잔금일</label>
+                            <div class="col-md-3">
+                                <ng-calender ng-model="request.balanceDate" format="'YYYY-MM-DD'" empty="true"></ng-calender>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-md-2">임대인 성명</label>
+                            <div class="col-md-3 form-inline">
+                                <input type="text" name="ownerName" class="form-control" ng-model="request.ownerName" maxlength="15" />
+                            </div>
+                            <label class="control-label col-md-2">임대인 전화</label>
+                            <div class="col-md-3">
+                                <input type="text" name="ownerTel" class="form-control" ng-model="request.ownerTel" maxlength="15" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-md-2">임차인 성명</label>
+                            <div class="col-md-3 form-inline">
+                                <input type="text" name="renterName" class="form-control" ng-model="request.renterName" maxlength="15" />
+                            </div>
+                            <label class="control-label col-md-2">임차인 전화</label>
+                            <div class="col-md-3">
+                                <input type="text" name="renterTel" class="form-control" ng-model="request.renterTel" maxlength="15" />
+                            </div>
+                        </div>
+                        <div class="form-group" ng-if="request.no">
+                            <label class="control-label col-md-2">계약서</label>
+                            <div class="col-md-2">
+                                <span class="btn btn-default" ng-model="files" ngf-select="uploadFiles($files, request.no)" multiple="multiple">파일첨부</span>
+                                <span ng-show="uploaded" class="text-success"><i class="glyphicon glyphicon-ok"></i></span>
+                            </div>
+                            <div class="col-md-7">
+                                <div class="form-control-static">
+                                    <div ng-repeat="file in request.files.split(',')" ng-if="request.files">
+                                        <a class="text-danger" ng-click="deleteFile(file, request.no)"><i class="glyphicon glyphicon-remove"></i></a>
+                                        <a href="/Contracts/Download/{{request.no}}?fileName={{file}}">{{file}}</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-md-2">메모1</label>
+                            <div class="col-md-9">
+                                <input type="text" class="form-control" ng-model="request.memo1" maxlength="120" />
+                            </div>
+                        </div>
+                        <!--
+                        <div class="form-group">
+                            <label class="control-label col-md-2">메모2</label>
+                            <div class="col-md-9">
+                                <input type="text" class="form-control" ng-model="request.memo2" maxlength="120" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-md-2">메모3</label>
+                            <div class="col-md-9">
+                                <input type="text" class="form-control" ng-model="request.memo3" maxlength="120" />
+                            </div>
+                        </div>
+                        -->
+                        <div class="form-group">
+                            <label class="control-label col-md-2">내용</label>
+                            <div class="col-md-9">
+                                <textarea class="form-control" rows="5" ng-model="request.content"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" ng-click="$hide()">닫기</button>
+                        <button type="submit" class="btn btn-success" ng-disabled="modalForm.$invalid || modalForm.$submitted">저장</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</script>

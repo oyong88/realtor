@@ -1,0 +1,383 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section scripts {
+
+    <script type="text/javascript">
+
+        (function () {
+            'use strict';
+
+            var app = angular.module('realtor');
+
+            //init data from server..
+            app.value("initData", {
+                isActive: @(ViewBag.Title == "CustomersHistory" ? "false" : "true"),
+                saleType: @Html.Raw(ViewData["SaleType"]),
+                rentType: @Html.Raw(ViewData["RentType"]),
+                buildType: @Html.Raw(ViewData["BuildType"])
+                });
+
+            //define controller
+            app.controller('Controller', function ($scope, $window, dataService, initData, $modal, $alert, usSpinnerService) {
+
+                var request = {
+                    buildType : 1,
+                    saleType: 1,
+                    isActive: initData.isActive
+                }
+
+                var modal = $modal({
+                    scope: $scope,
+                    templateUrl: 'modal.html',
+                    show: false
+                });
+
+                var confirm = $modal({
+                    scope: $scope,
+                    templateUrl: 'confirm.html',
+                    placement: 'center',
+                    show: false
+                });
+
+                angular.extend($scope, {
+                    total: 0,
+                    initData: initData,
+                    searchCondition: {
+                        isActive: initData.isActive,
+                        saleType: '',
+                        rentType: '',
+                        buildType: '',
+                        type: 1,
+                        word: '',
+                        page: 1,
+                        pageSize: 15,
+                        no: '@ViewData["No"]'
+                    },
+                    request: {
+                        saleType: 1,
+                        buildType: 1
+                    },
+                    getBuildName: function(buildType) {
+                        return initData.buildType[buildType];
+                    },
+                    getSaleName: function(saleType, rentType) {
+                        if(saleType == 1) {
+                            return initData.saleType[saleType];
+                        } else {
+                            return initData.rentType[rentType];
+                        }
+                    },
+                    selectSaleType: function() {
+                        if($scope.searchCondition.saleType != 2) {
+                            $scope.searchCondition.rentType = null;
+                        }
+
+                        if($scope.request.saleType == 2) {
+                            $scope.request.rentType = 1;
+                        } else {
+                            $scope.request.rentType = null;
+                        }
+                    },
+                    openModal: function (no) {
+
+                        if(no) {
+                            $scope.modalTitle = "수정";
+
+                            //update
+                            dataService.get("/Customers/Load/" + no).success(function (data) {
+                                $scope.request = data;
+
+                                modal.$promise.then(modal.show);
+                            });
+
+                        } else {
+
+                            //new/
+                            $scope.request = angular.copy(request);
+                            $scope.modalTitle = "신규";
+
+                            $scope.request.registDate = moment();
+
+                            modal.$promise.then(modal.show);
+                        }
+                    },
+                    search: function (page, init) {
+
+                        usSpinnerService.spin('loading');
+
+                        if(page) {
+                            $scope.searchCondition.page = page;
+                        }
+
+                        if(init) {
+                            $scope.searchCondition.no = null;
+                        }
+
+                        dataService.get("/Customers/List", $scope.searchCondition).success(function (data) {
+
+                            usSpinnerService.stop('loading');
+
+                            $scope.customerList = data.list;
+                            $scope.total = data.total;
+                        });
+
+                    },
+                    submit: function() {
+                        dataService.post("/Customers/Save", $scope.request).success(function (data) {
+
+                            $alert({
+                                title: '성공!',
+                                content: '저장되었습니다.',
+                                placement: 'top',
+                                type: 'success',
+                                duration: 2,
+                                container: "#success",
+                                show: true});
+
+                            modal.$promise.then(modal.hide);
+
+                            $scope.search();
+
+                        });
+                    },
+                    selectPage: function(page, pageSize) {
+                        $scope.search(page);
+                    },
+                    exportData: function() {
+                        $window.location = '/Customers/Export?isActive=' + initData.isActive;
+                    },
+                    openConfirm: function(no) {
+                        $scope.selectedNo = no;
+
+                        confirm.$promise.then(confirm.show);
+                    },
+                    toggleActive: function() {
+                        dataService.post("/Customers/Active/" + $scope.selectedNo).success(function (data) {
+
+                            $alert({
+                                title: '성공!',
+                                content: '저장되었습니다.',
+                                placement: 'top',
+                                type: 'success',
+                                duration: 2,
+                                container: "#success",
+                                show: true});
+
+                            confirm.$promise.then(confirm.hide);
+
+                            $scope.search();
+
+                        });
+                    }
+                });
+
+                $scope.search();
+                
+            });
+
+        }());
+
+</script>
+
+}
+
+<div class="row">
+    <div class="col-md-12" id="success"></div>
+</div>
+
+<div class="row">
+
+    <form name="searchForm" ng-submit="search(1, true)" novalidate ng-cloak>
+        <div class="col-md-12 form-group form-inline">
+            <label class="radio-inline"><input type="radio" name="searchType" value="1" ng-model="searchCondition.type" />전화</label>
+            <label class="radio-inline"><input type="radio" name="searchType" value="2" ng-model="searchCondition.type" />명칭</label>
+            <input type="text" class="form-control" ng-model="searchCondition.keyword" />
+            <select class="form-control" ng-model="searchCondition.saleType" ng-change="selectSaleType()">
+                <option value="">전체</option>
+                <option ng-repeat="(key, name) in initData.saleType" value="{{key}}">{{name}}</option>
+            </select>
+            <select class="form-control" ng-model="searchCondition.rentType" ng-disabled="searchCondition.saleType != 2">
+                <option value="">전체</option>
+                <option ng-repeat="(key, name) in initData.rentType" value="{{key}}">{{name}}</option>
+            </select>
+            <select class="form-control" ng-model="searchCondition.buildType">
+                <option value="">전체</option>
+                <option ng-repeat="(key, name) in initData.buildType" value="{{key}}">{{name}}</option>
+            </select>
+            <button type="submit" class="btn btn-primary"><i class="glyphicon glyphicon-search"></i></button>
+            <div class="pull-right">
+                <button type="button" class="btn btn-default" ng-click="exportData()">
+                    <i class="glyphicon glyphicon-print"></i>
+                </button>
+                <button type="button" class="btn btn-default" ng-click="openModal()">
+                    <i class="glyphicon glyphicon-edit"></i>
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <span us-spinner="{radius:30, width:8, length: 16}" spinner-key="loading"></span>
+        <div class="table-responsive">
+            <table class="table table-striped" ng-cloak>
+                <thead>
+                    <tr>
+                        <th style="width:8%">구분</th>
+                        <th style="width:6%">종류</th>
+                        <th style="width:14%">명칭</th>
+                        <th style="width:12%">전화번호</th>
+                        <th style="width:14%">금액</th>
+                        <th style="width:36%">내용</th>
+                        <th style="width:10%">날짜</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="customer in customerList">
+                        <td>
+                            <a ng-click="openConfirm(customer.no)">
+                                <i class="glyphicon glyphicon-unchecked"></i>
+                            </a>
+                            {{getBuildName(customer.buildType)}}
+                        </td>
+                        <td>{{getSaleName(customer.saleType, customer.rentType)}}</td>
+                        <td><a ng-click="openModal(customer.no)">{{customer.name}}</a></td>
+                        <td>{{customer.tel}}</td>
+                        <td>{{customer.amount}}</td>
+                        <td>{{customer.content | limitTo: 30}} {{customer.content == null || customer.content.length < 30 ? '' : '...'}}</td>
+                        <td>{{customer.registDate | date: 'yyyy-MM-dd'}}</td>
+                    </tr>
+                    <tr ng-show="customerList.length == 0">
+                        <td colspan="7" class="text-center">검색 결과가 존재하지 않습니다.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 text-center">
+        <div paging page="searchCondition.page" page-size="searchCondition.pageSize" total="total"
+             show-prev-next="true" scroll-top="true" hide-if-empty="true"
+             paging-action="selectPage(page, pageSize, total)"></div>
+    </div>
+</div>
+
+<script type="text/ng-template" id="modal.html">
+
+    <!-- Modal -->
+    <!-- Modal -->
+    <div class="modal">
+        <div class="modal-dialog large">
+            <div class="modal-content">
+                <form name="modalForm" class="form-horizontal" ng-submit="submit()" novalidate>
+                    <div class="modal-header">
+                        <button type="button" class="close" ng-click="$hide()"><span>&times;</span></button>
+                        <h4 class="modal-title">손님 정보 : {{modalTitle}}</h4>
+                    </div>
+                    <div class="modal-body">
+
+                        <div class="form-group">
+                            <label class="control-label col-md-2" ng-class="{'has-error': modalForm.saleType.$invalid || modalForm.rentType.$invalid}">종류</label>
+                            <div class="col-md-3 form-inline">
+                                <select name="saleType" class="form-control"
+                                        ng-options="key*1 as name for (key, name) in initData.saleType"
+                                        ng-model="request.saleType" ng-change="selectSaleType()" ng-required="true"></select>
+                                <select name="rentType" class="form-control"
+                                        ng-options="key*1 as name for (key, name) in initData.rentType"
+                                        ng-model="request.rentType" ng-show="request.saleType == 2" ng-required="request.saleType == 2"></select>
+                            </div>
+                            <label class="control-label col-md-2" ng-class="{'has-error': modalForm.buildType.$invalid}">구분</label>
+                            <div class="col-md-4 form-inline">
+                                <select name="buildType" class="form-control"
+                                        ng-options="key*1 as name for (key, name) in initData.buildType"
+                                        ng-model="request.buildType" ng-required="true"></select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div ng-class="{'has-error': modalForm.name.$invalid}">
+                                <label class="control-label col-md-2">명칭</label>
+                                <div class="col-md-3 form-inline">
+                                    <input type="text" name="name" class="form-control" ng-model="request.name" maxlength="15" ng-required="true" />
+                                </div>
+                            </div>
+                            <label class="control-label col-md-2">날짜</label>
+                            <div class="col-md-3">
+                                <ng-calender ng-model="request.registDate" format="'YYYY-MM-DD'"></ng-calender>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div ng-class="{'has-error': modalForm.tel.$invalid}">
+                                <label class="control-label col-md-2">전화번호</label>
+                                <div class="col-md-3 form-inline">
+                                    <input name="tel" type="text" class="form-control" ng-model="request.tel" maxlength="15" ng-required="true" />
+                                </div>
+                            </div>
+                            <label class="control-label col-md-2">금액</label>
+                            <div class="col-md-4 form-inline">
+                                <input name="amount" type="text" class="form-control" ng-model="request.amount" maxlength="15" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-md-2">메모1</label>
+                            <div class="col-md-9">
+                                <input type="text" class="form-control" ng-model="request.memo1" maxlength="120" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-md-2">메모2</label>
+                            <div class="col-md-9">
+                                <input type="text" class="form-control" ng-model="request.memo2" maxlength="120" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-md-2">메모3</label>
+                            <div class="col-md-9">
+                                <input type="text" class="form-control" ng-model="request.memo3" maxlength="120" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-md-2">내용</label>
+                            <div class="col-md-9">
+                                <textarea class="form-control" rows="5" ng-model="request.content"></textarea>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" ng-click="$hide()">닫기</button>
+                        <button type="submit" class="btn btn-success" ng-disabled="modalForm.$invalid || modalForm.$submitted">저장</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</script>
+
+
+<script type="text/ng-template" id="confirm.html">
+
+    <!-- Confirm -->
+    <div class="modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <h3 ng-show="initData.isActive">손님정보를 기록으로 보관하시겠습니까?</h3>
+                    <h3 ng-show="!initData.isActive">손님기록을 활성화하시겠습니까?</h3>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" ng-click="$hide()">취소</button>
+                    <a class="btn btn-danger btn-ok" ng-click="toggleActive()" ng-show="initData.isActive">기록보관</a>
+                    <a class="btn btn-success btn-ok" ng-click="toggleActive()" ng-show="!initData.isActive">활성화</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</script>

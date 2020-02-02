@@ -1,0 +1,131 @@
+﻿
+@model List<Contract>
+<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Font ss:FontName="맑은 고딕" x:CharSet="129" x:Family="Modern" ss:Size="11" ss:Color="#000000"/>
+  </Style>
+  <Style ss:ID="s62">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:FontName="맑은 고딕" x:CharSet="129" x:Family="Modern" ss:Color="#000000" ss:Bold="1"/>
+   <Interior ss:Color="#D9D9D9" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="s63">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:FontName="맑은 고딕" x:CharSet="129" x:Family="Modern" ss:Color="#000000" ss:Bold="1"/>
+   <Interior ss:Color="#D9D9D9" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="s64">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:FontName="맑은 고딕" x:CharSet="129" x:Family="Modern" ss:Color="#000000" ss:Bold="1"/>
+   <Interior ss:Color="#D9D9D9" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="s65">
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:FontName="맑은 고딕" x:CharSet="129" x:Family="Modern" ss:Color="#000000"/>
+   <NumberFormat ss:Format="@("@")"/>
+  </Style>
+  <Style ss:ID="s66">
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:FontName="맑은 고딕" x:CharSet="129" x:Family="Modern" ss:Color="#000000"/>
+   <NumberFormat ss:format="@("@")" />
+  </Style>
+  <Style ss:ID="s67">
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:FontName="맑은 고딕" x:CharSet="129" x:Family="Modern" ss:Color="#000000"/>
+   <NumberFormat ss:Format="@("@")"/>
+  </Style>
+ </Styles>
+
+ <Worksheet ss:Name="Sheet1">
+  <Table ss:ExpandedColumnCount="16" ss:ExpandedRowCount="@(Model.Count + 1)" ss:DefaultColumnWidth="50" ss:DefaultRowHeight="16">
+   <Column ss:AutoFitWidth="0" ss:Width="80"/>
+   <Column ss:AutoFitWidth="0" ss:Width="80"/>
+   <Column ss:AutoFitWidth="0" ss:Width="100"/>
+   <Column ss:AutoFitWidth="0" ss:Width="80"/>
+   <Column ss:AutoFitWidth="0" ss:Width="80"/>
+   <Column ss:AutoFitWidth="0" ss:Width="80"/>
+   <Column ss:AutoFitWidth="0" ss:Width="80"/>
+   <Column ss:AutoFitWidth="0" ss:Width="80"/>
+   <Column ss:AutoFitWidth="0" ss:Width="100"/>
+   <Column ss:AutoFitWidth="0" ss:Width="100" />
+   <Column ss:AutoFitWidth="0" ss:Width="100" />
+   <Column ss:AutoFitWidth="0" ss:Width="100" />
+   <Column ss:AutoFitWidth="0" ss:Width="80" />
+   <Column ss:AutoFitWidth="0" ss:Width="150"/>
+   <Column ss:AutoFitWidth="0" ss:Width="270"/>
+   <Column ss:AutoFitWidth="0" ss:Width="80"/>
+   <Row ss:AutoFitHeight="0">
+    <Cell ss:StyleID="s62"><Data ss:Type="String">명칭</Data></Cell>
+    <Cell ss:StyleID="s63"><Data ss:Type="String">계약내용금액</Data></Cell>
+    <Cell ss:StyleID="s63"><Data ss:Type="String">소재지</Data></Cell>
+    <Cell ss:StyleID="s63"><Data ss:Type="String">계약금</Data></Cell>
+    <Cell ss:StyleID="s63"><Data ss:Type="String">중도금</Data></Cell>
+    <Cell ss:StyleID="s63"><Data ss:Type="String">중도일</Data></Cell>
+    <Cell ss:StyleID="s63"><Data ss:Type="String">잔금</Data></Cell>
+    <Cell ss:StyleID="s63"><Data ss:Type="String">잔금일</Data></Cell>
+    <Cell ss:StyleID="s63"><Data ss:Type="String">임대인 성명</Data></Cell>
+    <Cell ss:StyleID="s63"><Data ss:Type="String">임대인 전화</Data></Cell>
+    <Cell ss:StyleID="s63"><Data ss:Type="String">임차인 성명</Data></Cell>
+    <Cell ss:StyleID="s63"><Data ss:Type="String">임차인 전화</Data></Cell>
+    <Cell ss:StyleID="s63"><Data ss:Type="String">공동중개</Data></Cell>
+    <Cell ss:StyleID="s63"><Data ss:Type="String">메모1</Data></Cell>
+    <Cell ss:StyleID="s63"><Data ss:Type="String">내용</Data></Cell>
+    <Cell ss:StyleID="s64"><Data ss:Type="String">날짜</Data></Cell>
+   </Row>
+    @foreach(var contract in Model)
+    {
+        <Row ss:AutoFitHeight="0">
+            <Cell ss:StyleID="s65"><Data ss:Type="String">@contract.Name</Data></Cell>
+            <Cell ss:StyleID="s66"><Data ss:Type="String">@contract.Payment</Data></Cell>
+            <Cell ss:StyleID="s66"><Data ss:Type="String">@contract.Address</Data></Cell>
+            <Cell ss:StyleID="s66"><Data ss:Type="String">@contract.Amount</Data></Cell>
+            <Cell ss:StyleID="s66"><Data ss:Type="String">@contract.SecondPayment</Data></Cell>
+            <Cell ss:StyleID="s66"><Data ss:Type="String">@(contract.SecondPaymentDate.HasValue ? contract.SecondPaymentDate.Value.ToString("yyyy-MM-dd") : "")</Data></Cell>
+            <Cell ss:StyleID="s66"><Data ss:Type="String">@contract.Balance</Data></Cell>
+            <Cell ss:StyleID="s66"><Data ss:Type="String">@(contract.BalanceDate.HasValue ? contract.BalanceDate.Value.ToString("yyyy-MM-dd") : "")</Data></Cell>
+            <Cell ss:StyleID="s66"><Data ss:Type="String">@contract.OwnerName</Data></Cell>
+            <Cell ss:StyleID="s66"><Data ss:Type="String">@contract.OwnerTel</Data></Cell>
+            <Cell ss:StyleID="s66"><Data ss:Type="String">@contract.RenterName</Data></Cell>
+            <Cell ss:StyleID="s66"><Data ss:Type="String">@contract.RenterTel</Data></Cell>
+            <Cell ss:StyleID="s66"><Data ss:Type="String">@contract.Partner</Data></Cell>
+            <Cell ss:StyleID="s66"><Data ss:Type="String">@contract.Memo1</Data></Cell>
+            <Cell ss:StyleID="s66"><Data ss:Type="String">@contract.Content</Data></Cell>
+            <Cell ss:StyleID="s67"><Data ss:Type="String">@contract.RegistDate.ToString("yyyy-MM-dd")</Data></Cell>
+        </Row>   
+    }
+  </Table>
+
+ </Worksheet>
+</Workbook>
